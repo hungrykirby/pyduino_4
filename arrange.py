@@ -15,25 +15,44 @@ class Arrange:
     count_calibration = 0
     FRAMES_CALIBRATION = 5
     array_calibration = []
-    calibration_numbers = np.array([0, 0, 0]).astype(np.int64)
+    calibration_numbers = np.array([0, 0, 0, 0]).astype(np.int64)
 
-    def __init__(self, serial, MODE):
+    def __init__(self, serial, MODE, is_new):
         self.ser = serial
         self.MODE = MODE
+        self.is_new = is_new
 
-    def plots(self, x, y, z):
-        #figure(figsize=(8, 8))
-        #subplot(511)
-        clf()
-        axis([-1500, 1500, -0.5, 5.5])
-        subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=0.5)
-        plot(x, 1, 'o')
-        plot(y, 3, '*')
-        plot(z, 5, 'd')
-        pause(0.00001)
+    def make_dir_train_or_test(self, is_new):
+        if self.MODE == "test" or self.MODE == "train":
+            fn = os.path.join(os.getcwd(), self.MODE)
+            if not os.path.exists(fn):
+                os.makedirs(fn)
+            elif is_new == "n":
+                nums = []
+                list_dirs = os.listdir(os.getcwd())
+                for d in list_dirs:
+                    if d[0:len(self.MODE)] == self.MODE:
+                        exist_str = d[len(self.MODE) + 1:]
+                        if exist_str == "":
+                            nums.append(0)
+                        else:
+                            nums.append(int(exist_str))
+                if nums == []:
+                    maxnum = 0
+                else:
+                    maxnum = np.max(nums)
+
+                if maxnum < 9:
+                    str_num = "0" + str(maxnum + 1)
+                else:
+                    str_num = str(maxnum + 1)
+                os.rename(os.path.join(os.getcwd(), self.MODE), os.path.join(os.getcwd(), self.MODE + str_num))
+                os.makedirs(os.path.join(os.getcwd(), self.MODE))
+            else:
+                pass
 
     def write_ceps(self, ceps, fn_):
-        if MODE == "test" or MODE == "train":
+        if self.MODE == "test" or self.MODE == "train":
             fn = os.path.join(os.getcwd(), self.MODE, fn_)
             if not os.path.exists(fn):
                 os.makedirs(fn)
@@ -47,7 +66,7 @@ class Arrange:
             np.save(data_fn,ceps)
             self.count += 1
 
-    def fetch_three_numbers(self, matched_group, is_calibration, c):
+    def fetch_4_numbers(self, matched_group, is_calibration, c):
         if self.past_c != c:
             self.past_c = c
             self.count = 0
@@ -58,7 +77,7 @@ class Arrange:
             elif self.bwn_a:
                 self.plots_numbers.append(int(matched_group))
 
-            if len(self.plots_numbers) == 3:
+            if len(self.plots_numbers) == 4:
                 pl = self.plots_numbers
                 #self.plots(pl[0], pl[1], pl[2])
                 self.bwn_a = False
